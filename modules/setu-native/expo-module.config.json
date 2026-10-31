@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["SetuNativeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.setunative.SetuNativeModule"]
+  }
+}
