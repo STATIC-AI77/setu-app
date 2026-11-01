@@ -114,7 +114,7 @@ class SetuOverlayService : Service() {
         }
 
         val title = TextView(this).apply {
-            text = "Blocked by Setu\nसेतु द्वारा अवरुद्ध"
+            text = "Setu Security Alert\nसेतु सुरक्षा चेतावनी"
             textSize = 28f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
@@ -123,8 +123,8 @@ class SetuOverlayService : Service() {
         }
 
         val subtitle = TextView(this).apply {
-            text = "Payment apps locked — son must approve from dashboard\nधोखाधड़ी का खतरा — सुरक्षा के लिए भुगतान ऐप बंद हैं"
-            textSize = 16f
+            text = "Financial apps are temporarily locked to protect your savings. Contact your family guardian to unlock.\n\nधोखाधड़ी का खतरा — सुरक्षा के लिए भुगतान ऐप बंद हैं। अनलॉक करने के लिए परिवार से संपर्क करें।"
+            textSize = 15f
             setTextColor(Color.parseColor("#fef2f2"))
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 24)

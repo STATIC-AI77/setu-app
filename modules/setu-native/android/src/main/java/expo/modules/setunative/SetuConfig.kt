@@ -24,7 +24,7 @@ object SetuConfig {
     }
 
     fun getBaseUrl(context: Context): String =
-        getPrefs(context).getString(KEY_BASE_URL, "http://10.0.2.2:8000") ?: "http://10.0.2.2:8000"
+        getPrefs(context).getString(KEY_BASE_URL, "https://setu-backend.kintree.space") ?: "https://setu-backend.kintree.space"
 
     fun getToken(context: Context): String =
         getPrefs(context).getString(KEY_TOKEN, "setu-dev-token") ?: "setu-dev-token"

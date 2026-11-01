@@ -52,7 +52,7 @@ object SetuApiClient {
         val token = SetuConfig.getToken(context)
         val deviceId = SetuConfig.getDeviceId(context)
         return try {
-            val conn = openConnection("$baseUrl/detect", "POST", token, 3000)
+            val conn = openConnection("$baseUrl/detect", "POST", token, 12000)
             conn.doOutput = true
             val body = JSONObject().apply {
                 put("channel", channel)
@@ -81,7 +81,7 @@ object SetuApiClient {
         val baseUrl = SetuConfig.getBaseUrl(context).trimEnd('/')
         val token = SetuConfig.getToken(context)
         return try {
-            val conn = openConnection("$baseUrl/chat/decoy-reply", "POST", token, 3000)
+            val conn = openConnection("$baseUrl/chat/decoy-reply", "POST", token, 8000)
             conn.doOutput = true
             val body = JSONObject().apply {
                 put("conversation_id", JSONObject.NULL)

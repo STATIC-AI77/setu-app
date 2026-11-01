@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Radial Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#064E3B" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#022C22" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+    </radialGradient>
+
+    <!-- Outer Shield Rim Gradient -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+
+    <!-- Inner Shield Surface Gradient -->
+    <linearGradient id="surfaceGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#070A11"/>
+    </linearGradient>
+
+    <!-- Emerald Glow Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Setu Bridge Arc Gradients -->
+    <linearGradient id="bridgeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <linearGradient id="bridgeBottom" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+
+    <linearGradient id="coreGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+  </defs>
+
+  <!-- BACKGROUND -->
+  <rect width="1024" height="1024" rx="228" fill="#000000"/>
+  <rect width="1024" height="1024" rx="228" fill="url(#bgGlow)"/>
+
+  <!-- SHIELD DROP SHADOW -->
+  <path d="M 512,175 C 670,175 805,215 805,350 C 805,620 660,795 512,875 C 364,795 219,620 219,350 C 219,215 354,175 512,175 Z"
+        fill="#000000" opacity="0.6" transform="translate(0, 16)"/>
+
+  <!-- OUTER SHIELD RIM -->
+  <path d="M 512,170 C 670,170 805,210 805,345 C 805,615 660,790 512,870 C 364,790 219,615 219,345 C 219,210 354,170 512,170 Z"
+        fill="url(#surfaceGrad)" stroke="url(#rimGrad)" stroke-width="8"/>
+
+  <!-- INNER SHIELD ACCENT BORDER -->
+  <path d="M 512,205 C 645,205 765,240 765,355 C 765,585 640,745 512,820 C 384,745 259,585 259,355 C 259,240 379,205 512,205 Z"
+        fill="none" stroke="rgba(52, 211, 153, 0.2)" stroke-width="3"/>
+
+  <!-- SETU (BRIDGE) INTERLOCKING "S" EMBLEM -->
+  <g filter="url(#neonGlow)">
+    <!-- Top Bridge Sweep (Emerald) -->
+    <path d="M 330,360 C 330,290 410,270 512,270 C 620,270 700,310 700,380 C 700,470 580,480 490,510 C 410,535 340,570 340,660 C 340,740 420,775 512,775 C 470,775 390,750 390,680 C 390,620 450,580 530,550 C 620,520 710,480 710,370 C 710,270 600,225 512,225 C 390,225 285,270 285,360 Z"
+          fill="url(#bridgeTop)"/>
+
+    <!-- Bottom Bridge Arch & Anchor (Electric Cyan) -->
+    <path d="M 694,664 C 694,734 614,754 512,754 C 404,754 324,714 324,644 C 324,554 444,544 534,514 C 614,489 684,454 684,364 C 684,284 604,249 512,249 C 554,249 634,274 634,344 C 634,404 574,444 494,474 C 404,504 314,544 314,654 C 314,754 424,799 512,799 C 634,799 739,754 739,664 Z"
+          fill="url(#bridgeBottom)" opacity="0.9"/>
+
+    <!-- Central Security Keystones (The Protective Interlock Pillars) -->
+    <circle cx="512" cy="512" r="28" fill="url(#coreGlow)" filter="url(#neonGlow)"/>
+    <circle cx="512" cy="512" r="14" fill="#000000"/>
+    <circle cx="512" cy="512" r="6" fill="#34D399"/>
+  </g>
+</svg>

@@ -13,6 +13,13 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL || 'https://setu-backend.kintree.space' }}
+      EXPO_PUBLIC_TEAM_TOKEN: ${{ secrets.EXPO_PUBLIC_TEAM_TOKEN || 'setu-dev-token' }}
+      EXPO_PUBLIC_FAMILY_ID: ${{ secrets.EXPO_PUBLIC_FAMILY_ID || 'fam_pune_9823' }}
+      EXPO_PUBLIC_DEVICE_ID: ${{ secrets.EXPO_PUBLIC_DEVICE_ID || 'elder_pixel_6a_01' }}
+      EXPO_PUBLIC_FALLBACK_URL: ${{ secrets.EXPO_PUBLIC_FALLBACK_URL || 'https://remix-boston-took-considering.trycloudflare.com' }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,6 +45,18 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Configure Build Environment
+        run: |
+          cat << 'EOF' > .env
+          EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL || 'https://setu-backend.kintree.space' }}
+          EXPO_PUBLIC_TEAM_TOKEN=${{ secrets.EXPO_PUBLIC_TEAM_TOKEN || 'setu-dev-token' }}
+          EXPO_PUBLIC_FAMILY_ID=${{ secrets.EXPO_PUBLIC_FAMILY_ID || 'fam_pune_9823' }}
+          EXPO_PUBLIC_DEVICE_ID=${{ secrets.EXPO_PUBLIC_DEVICE_ID || 'elder_pixel_6a_01' }}
+          EXPO_PUBLIC_FALLBACK_URL=${{ secrets.EXPO_PUBLIC_FALLBACK_URL || 'https://remix-boston-took-considering.trycloudflare.com' }}
+          EOF
+          echo "--- Build Environment Configured ---"
+          grep "EXPO_PUBLIC_API_URL" .env
 
       - name: Prebuild Android project
         run: npx expo prebuild --platform android --clean

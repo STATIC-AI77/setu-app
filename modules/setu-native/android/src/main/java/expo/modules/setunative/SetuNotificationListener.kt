@@ -1,18 +1,25 @@
 package expo.modules.setunative
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.RemoteInput
+import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 
 class SetuNotificationListener : NotificationListenerService() {
     companion object {
         private var lastProcessedText = ""
         private var lastProcessedTime = 0L
+        private const val ALERT_CHANNEL_ID = "setu_scam_alerts"
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
@@ -52,14 +59,16 @@ class SetuNotificationListener : NotificationListenerService() {
             }
 
             if (result.isScam) {
-                val verdictLog = "Msg from $sender → SCAM (${result.scamType}, ${result.riskScore})"
+                val verdictLog = "Msg from $sender → SCAM (${result.scamType}, ${result.riskScore}%)"
                 SetuConfig.addLog(this, channel.uppercase(), verdictLog)
 
                 if (result.action == "arm_interlock") {
+                    // 1. Activate payment app interlock
                     SetuOverlayService.arm(this, result.scamType, result.riskScore)
-                }
-
-                if (SetuConfig.isAutoReplyEnabled(this)) {
+                    // 2. Show prominent red scam alert banner in notification tray
+                    showScamAlertNotification(sender, result.scamType, text)
+                    // 3. Per spec: Do NOT reply to scammer on arm_interlock
+                } else if (SetuConfig.isAutoReplyEnabled(this)) {
                     val replyAction = findQuickReplyAction(sbn.notification)
                     if (replyAction != null) {
                         val reply = SetuApiClient.getDecoyReply(this, sender, text, result.scamType)
@@ -77,6 +86,35 @@ class SetuNotificationListener : NotificationListenerService() {
                 SetuConfig.addLog(this, channel.uppercase(), "Msg from $sender: Safe (${result.action})")
             }
         }.start()
+    }
+
+    private fun showScamAlertNotification(sender: String, scamType: String, messageSnippet: String) {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                ALERT_CHANNEL_ID,
+                "Setu Fraud & Scam Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Critical alert banners when elder scam is intercepted"
+                enableLights(true)
+                lightColor = Color.RED
+                enableVibration(true)
+            }
+            nm.createNotificationChannel(channel)
+        }
+
+        val notif = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ Fraud Alert: $scamType")
+            .setContentText("Sender $sender sent suspected fraud. Do not pay or click links.")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Sender $sender sent suspected fraud.\nMessage: \"$messageSnippet\"\n\nFinancial apps are temporarily locked to protect savings."))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setColor(Color.RED)
+            .setAutoCancel(true)
+            .build()
+
+        nm.notify(8001, notif)
     }
 
     private fun findQuickReplyAction(notification: Notification): Pair<Notification.Action, RemoteInput>? {
