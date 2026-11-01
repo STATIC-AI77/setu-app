@@ -12,6 +12,7 @@ import {
 import { AppSettings } from '../types';
 import { THEME } from '../constants/theme';
 import SetuNativeModule from '../../modules/setu-native/src/SetuNativeModule';
+import { supabase } from '../services/supabase';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -178,6 +179,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* SAVE BUTTON */}
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
               <Text style={styles.saveBtnText}>Save</Text>
+            </TouchableOpacity>
+
+            {/* SUPABASE SIGN OUT BUTTON */}
+            <TouchableOpacity
+              style={styles.signOutBtn}
+              onPress={async () => {
+                await supabase.auth.signOut();
+                onClose();
+              }}
+            >
+              <Text style={styles.signOutBtnText}>🚪 Sign Out of Setu Account</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -358,5 +370,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#000000',
+  },
+  signOutBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: THEME.radius.button,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  signOutBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#F87171',
   },
 });

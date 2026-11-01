@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { THEME } from '../../constants/theme';
 
-export type AppTab = 'shield' | 'radar' | 'saroj' | 'dossier';
+export type AppTab = 'shield' | 'radar' | 'saroj' | 'call' | 'dossier';
 
 interface BottomTabBarProps {
   currentTab: AppTab;
   onSelectTab: (tab: AppTab) => void;
   interlockActive: boolean;
   threatCount?: number;
+  onPressPanic?: () => void;
 }
 
 interface TabItem {
@@ -18,7 +19,7 @@ interface TabItem {
   activeColor: string;
 }
 
-const TABS: TabItem[] = [
+const LEFT_TABS: TabItem[] = [
   {
     key: 'shield',
     label: 'Shield',
@@ -31,11 +32,20 @@ const TABS: TabItem[] = [
     icon: '📊',
     activeColor: THEME.colors.cyan,
   },
+];
+
+const RIGHT_TABS: TabItem[] = [
   {
     key: 'saroj',
     label: 'Decoy',
     icon: '👵',
     activeColor: THEME.colors.violet,
+  },
+  {
+    key: 'call',
+    label: 'Call',
+    icon: '📞',
+    activeColor: THEME.colors.crimson,
   },
   {
     key: 'dossier',
@@ -50,43 +60,64 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   onSelectTab,
   interlockActive,
   threatCount = 0,
+  onPressPanic,
 }) => {
+  const renderTab = (tab: TabItem) => {
+    const isActive = currentTab === tab.key;
+    const showThreatBadge =
+      (tab.key === 'shield' && interlockActive) ||
+      (tab.key === 'radar' && threatCount > 0);
+
+    return (
+      <TouchableOpacity
+        key={tab.key}
+        style={[styles.tabButton, isActive && styles.tabButtonActive]}
+        onPress={() => onSelectTab(tab.key)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.iconBox}>
+          <Text style={[styles.iconText, isActive && styles.iconActive]}>
+            {tab.icon}
+          </Text>
+          {showThreatBadge && <View style={styles.badgeDot} />}
+        </View>
+
+        <Text
+          style={[
+            styles.label,
+            isActive
+              ? { color: tab.activeColor, fontWeight: '700' }
+              : styles.labelInactive,
+          ]}
+        >
+          {tab.label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.bar}>
-        {TABS.map((tab) => {
-          const isActive = currentTab === tab.key;
-          const showThreatBadge =
-            (tab.key === 'shield' && interlockActive) ||
-            (tab.key === 'radar' && threatCount > 0);
+        {/* LEFT TABS: Shield & Activity */}
+        {LEFT_TABS.map(renderTab)}
 
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tabButton, isActive && styles.tabButtonActive]}
-              onPress={() => onSelectTab(tab.key)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconBox}>
-                <Text style={[styles.iconText, isActive && styles.iconActive]}>
-                  {tab.icon}
-                </Text>
-                {showThreatBadge && <View style={styles.badgeDot} />}
-              </View>
+        {/* CENTER PANIC / SOS BUTTON */}
+        <TouchableOpacity
+          style={styles.panicButtonWrapper}
+          onPress={onPressPanic}
+          activeOpacity={0.8}
+        >
+          <View style={styles.panicCircleGlow}>
+            <View style={styles.panicCircle}>
+              <Text style={styles.panicIcon}>🚨</Text>
+            </View>
+          </View>
+          <Text style={styles.panicLabel}>PANIC</Text>
+        </TouchableOpacity>
 
-              <Text
-                style={[
-                  styles.label,
-                  isActive
-                    ? { color: tab.activeColor, fontWeight: '700' }
-                    : styles.labelInactive,
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {/* RIGHT TABS: Decoy & Helpline */}
+        {RIGHT_TABS.map(renderTab)}
       </View>
     </View>
   );
@@ -101,9 +132,9 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.bgRoot,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.cardBorder,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-    paddingTop: 8,
-    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+    paddingTop: 6,
+    paddingHorizontal: 16,
   },
   bar: {
     flexDirection: 'row',
@@ -113,14 +144,14 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radius.card,
     borderWidth: 1,
     borderColor: THEME.colors.cardBorder,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: THEME.radius.cardSmall,
   },
   tabButtonActive: {
@@ -128,10 +159,10 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     position: 'relative',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   iconText: {
-    fontSize: 20,
+    fontSize: 19,
     opacity: 0.5,
   },
   iconActive: {
@@ -150,11 +181,50 @@ const styles = StyleSheet.create({
     borderColor: THEME.colors.bgCard,
   },
   label: {
-    fontSize: 11,
+    fontSize: 10.5,
     letterSpacing: -0.2,
   },
   labelInactive: {
     color: THEME.colors.textMuted,
     fontWeight: '500',
+  },
+  panicButtonWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    top: -10,
+  },
+  panicCircleGlow: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  panicCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  panicIcon: {
+    fontSize: 20,
+  },
+  panicLabel: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#EF4444',
+    letterSpacing: 0.8,
+    marginTop: 3,
   },
 });

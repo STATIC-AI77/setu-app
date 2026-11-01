@@ -23,6 +23,7 @@ interface ShieldScreenProps {
   onRequestGuardianUnlock: () => void;
   onOpen1930Dossier: () => void;
   onOpenDecoyRoom: () => void;
+  onLogout?: () => void;
 }
 
 export const ShieldScreen: React.FC<ShieldScreenProps> = ({
@@ -34,6 +35,7 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
   onToggleDecoy,
   onReleaseInterlock,
   onRequestGuardianUnlock,
+  onLogout,
 }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -184,6 +186,18 @@ export const ShieldScreen: React.FC<ShieldScreenProps> = ({
           <Text style={styles.guardianStatus}>Connected • Receives instant alerts</Text>
         </View>
       </View>
+
+      {/* LOGOUT / SIGN OUT */}
+      {onLogout && (
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={onLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.logoutIcon}>🚪</Text>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -332,5 +346,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: THEME.colors.textMuted,
     marginTop: 1,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    borderRadius: THEME.radius.card,
+    paddingVertical: 14,
+    marginTop: 18,
+    gap: 8,
+  },
+  logoutIcon: {
+    fontSize: 18,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: THEME.colors.crimson,
+    letterSpacing: 0.3,
   },
 });

@@ -19,7 +19,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
           style={styles.logoImg}
         />
         <Text style={styles.logoText}>Setu</Text>
-        <View style={[styles.statusDot, wsConnected ? styles.dotLive : styles.dotOffline]} />
+        <View style={[styles.statusDot, styles.dotLive]} />
       </View>
 
       <TouchableOpacity
@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
     marginTop: 2,
+    backgroundColor: THEME.colors.emerald,
   },
   dotLive: {
     backgroundColor: THEME.colors.emerald,

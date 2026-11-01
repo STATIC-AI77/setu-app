@@ -27,20 +27,39 @@ export interface DetectResponse {
   engine: string;
 }
 
+export interface ExtractedIntel {
+  urls: string[];
+  phones: string[];
+  upi_ids: string[];
+  accounts: string[];
+}
+
+export interface ChatHistoryItem {
+  role: 'scammer' | 'saroj';
+  text: string;
+}
+
 export interface DecoyReplyRequest {
   conversation_id?: string | null;
   scammer_number: string;
-  history: Array<{ role: 'scammer' | 'saroj'; text: string }>;
+  history: ChatHistoryItem[];
   latest_message: string;
   scam_type?: string;
+  generate_audio?: boolean;
+  voice_id?: string;
 }
 
 export interface DecoyReplyResponse {
   reply: string;
   persona: string;
   turn_number: number;
-  intent: string;
-  extracted_intel: Record<string, any>;
+  intent: 'stall' | 'bait_account' | 'bait_upi' | 'confuse' | string;
+  extracted_intel: ExtractedIntel;
+  audio_url?: string | null;
+  audio_base64?: string | null;
+  voice_provider?: string | null;
+  voice_id?: string | null;
+  end_call?: boolean;
 }
 
 export interface ThreatIntelResponse {
@@ -103,13 +122,17 @@ export interface LiveKitTokenResponse {
 }
 
 export interface TranscriptTurn {
-  speaker: 'scammer' | 'saroj_aunty';
+  speaker: 'scammer' | 'saroj_aunty' | 'system';
   text: string;
   timestamp?: string;
   stt_ms?: number;
   llm_ms?: number;
   tts_ms?: number;
+  threat_level?: string;
+  intent?: string;
 }
+
+
 
 export interface CallTranscriptResponse {
   call_id: string;
@@ -122,6 +145,7 @@ export interface Police1930ReportResponse {
   report_id: string;
   filename: string;
   report_url: string;
+  pdf_url?: string;
 }
 
 export interface ImpactStats {

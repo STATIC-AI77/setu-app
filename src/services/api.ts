@@ -19,15 +19,24 @@ import { DEFAULT_CONFIG } from '../constants/config';
 export class SetuApiService {
   private baseUrl: string;
   private token: string;
+  private authToken: string | null = null;
 
   constructor(baseUrl: string = DEFAULT_CONFIG.BASE_URL, token: string = DEFAULT_CONFIG.TEAM_TOKEN) {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
     this.token = token;
   }
 
+  setAuthToken(token: string | null) {
+    this.authToken = token;
+  }
+
   updateCredentials(baseUrl: string, token: string) {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
     this.token = token;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
   }
 
   private async fetchWithTimeout<T>(
@@ -41,7 +50,7 @@ export class SetuApiService {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      Authorization: `Bearer ${this.token}`,
+      Authorization: `Bearer ${this.authToken || this.token}`,
       ...((options.headers as Record<string, string>) || {}),
     };
 
@@ -144,6 +153,22 @@ export class SetuApiService {
     );
   }
 
+  async getDecoyChatReply(req: DecoyReplyRequest): Promise<DecoyReplyResponse | null> {
+    return this.fetchWithTimeout<DecoyReplyResponse>(
+      '/chat/decoy-reply',
+      { method: 'POST', body: JSON.stringify(req) },
+      12000
+    );
+  }
+
+  async emitMockEvent(event: any): Promise<any> {
+    return this.fetchWithTimeout<any>(
+      '/mock/emit',
+      { method: 'POST', body: JSON.stringify(event) },
+      DEFAULT_CONFIG.TIMEOUTS.TELEMETRY_MS
+    );
+  }
+
   async get1930PoliceReport(
     verdictId: string,
     elderName: string = 'Saroj Sharma',
@@ -153,11 +178,23 @@ export class SetuApiService {
       elder_name: elderName,
       elder_phone: elderPhone,
     }).toString();
-    return this.fetchWithTimeout<Police1930ReportResponse>(
+    const res = await this.fetchWithTimeout<Police1930ReportResponse>(
       `/report/1930/${encodeURIComponent(verdictId)}?${params}`,
       { method: 'GET' },
       DEFAULT_CONFIG.TIMEOUTS.TELEMETRY_MS
     );
+    if (res && (res.report_url || res.pdf_url)) {
+      let activeUrl = res.pdf_url || res.report_url;
+      if (activeUrl.startsWith('/')) {
+        activeUrl = `${this.baseUrl}${activeUrl}`;
+      } else if (activeUrl.includes('localhost:8000') || activeUrl.includes('127.0.0.1:8000')) {
+        const pathPart = activeUrl.replace(/^https?:\/\/(localhost|127\.0\.0\.1):8000/, '');
+        activeUrl = `${this.baseUrl}${pathPart.startsWith('/') ? '' : '/'}${pathPart}`;
+      }
+      res.report_url = activeUrl;
+      res.pdf_url = activeUrl;
+    }
+    return res;
   }
 
   async getImpactStats(): Promise<ImpactStats | null> {
@@ -165,6 +202,24 @@ export class SetuApiService {
       '/scam-economy/stats',
       { method: 'GET' },
       DEFAULT_CONFIG.TIMEOUTS.TELEMETRY_MS
+    );
+  }
+
+  // Generic POST method for any endpoint
+  async post<T>(endpoint: string, body: any, timeoutMs: number = 8000): Promise<T | null> {
+    return this.fetchWithTimeout<T>(
+      endpoint,
+      { method: 'POST', body: JSON.stringify(body) },
+      timeoutMs
+    );
+  }
+
+  // Generic GET method for any endpoint
+  async get<T>(endpoint: string, timeoutMs: number = 5000): Promise<T | null> {
+    return this.fetchWithTimeout<T>(
+      endpoint,
+      { method: 'GET' },
+      timeoutMs
     );
   }
 }
