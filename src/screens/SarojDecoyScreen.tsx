@@ -108,8 +108,9 @@ const SCENARIOS: ScenarioConfig[] = [
     title: 'KBC Lottery Reward',
     subtitle: 'Fake 25 Lakhs Cash',
     scammerPremise: 'Scammer promises a massive lottery prize but demands upfront processing fee.',
-    sarojTactic: 'Acts excited, promises to buy temple sweets, and asks if Amitabh Bachchan will hand-deliver the cheque.',
+    sarojTactic: 'Disbelieves fake lottery, refuses to pay any advance tax/fees, and tells caller to deduct from prize.',
     quickPrompts: [
+      'You won a huge jackpot of 50 lakhs! Give your bank details.',
       'KBC lottery head office se bol raha hoon, aapka 25 Lakh ka inaam nikla hai!',
       'TDS tax clearance ke liye pehle 12,500 rupaye jama karo!',
       'Inaam ka cheque lene ke liye registration charge bhejo!',
@@ -247,13 +248,25 @@ export const SarojDecoyScreen: React.FC<SarojDecoyScreenProps> = ({
           <View style={styles.tacticItem}>
             <Text style={styles.tacticLabel}>TACTIC:</Text>
             <Text style={styles.tacticValue} numberOfLines={1}>
-              {lastIntent === 'bait_upi'
+              {lastIntent === 'reject_lottery'
+                ? '🎁 Disbelieving Fake Jackpot'
+                : lastIntent === 'refuse_lottery_fee'
+                ? '🛑 Refusing Upfront Fee'
+                : lastIntent === 'extract_identity'
+                ? '👮 Demanding Officer Name'
+                : lastIntent === 'extract_badge'
+                ? '📋 Demanding Badge Number'
+                : lastIntent === 'extract_location'
+                ? '🏢 Demanding Police Station'
+                : lastIntent === 'extract_case_ref'
+                ? '📁 Demanding Case Number'
+                : lastIntent === 'bait_upi'
                 ? '🎯 Asking for UPI ID / Passbook'
                 : lastIntent === 'bait_account'
                 ? '🎣 Feeding Fake Acct 5017...42'
-                : lastIntent === 'confuse'
-                ? '👵 Hurt Elder Confusion'
-                : '⏳ Stalling / Misplaced Chashma'}
+                : lastIntent === 'confuse' || lastIntent === 'stall_confused'
+                ? '👵 Elder Confusion Stalling'
+                : '⏳ Counter-Fraud Defense'}
             </Text>
           </View>
           <View style={styles.tacticItem}>

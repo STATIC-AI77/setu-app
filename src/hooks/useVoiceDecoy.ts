@@ -30,6 +30,80 @@ const stopAllSpeaking = () => {
 
 const DEFAULT_GREETING = 'नमस्ते, हेलो! कौन बोल रहे हैं आप?';
 
+const getLocalCounterFraudReply = (text: string): { reply: string; intent: string } => {
+  const lower = text.toLowerCase();
+  if (
+    lower.includes('jackpot') ||
+    lower.includes('lottery') ||
+    lower.includes('prize') ||
+    lower.includes('reward') ||
+    lower.includes('kbc') ||
+    lower.includes('crorepati') ||
+    lower.includes('inam') ||
+    lower.includes('winner') ||
+    lower.includes('congratulations')
+  ) {
+    return {
+      reply: 'अरे बेटा, कौन सा जैकपॉट? मैंने तो ज़िंदगी में कभी कोई लॉटरी नहीं खरीदी! आप गलत नंबर लगा दिए क्या?',
+      intent: 'reject_lottery',
+    };
+  }
+  if (
+    lower.includes('fee') ||
+    lower.includes('tax') ||
+    lower.includes('charge') ||
+    lower.includes('advance') ||
+    lower.includes('clearance') ||
+    lower.includes('registration')
+  ) {
+    return {
+      reply: 'अरे जब इनाम मेरा है तो मैं पैसे क्यों भरूँ? आप उसी इनाम में से फीस काट लो ना बाबू! मैं एक भी रुपया ऑनलाइन नहीं भेजूँगी।',
+      intent: 'refuse_lottery_fee',
+    };
+  }
+  if (
+    lower.includes('police') ||
+    lower.includes('cbi') ||
+    lower.includes('arrest') ||
+    lower.includes('warrant') ||
+    lower.includes('court') ||
+    lower.includes('customs')
+  ) {
+    return {
+      reply: 'साहब आप कौन हैं? आपका पूरा नाम, बैज नंबर और कौन सा पुलिस स्टेशन है बताइए, मैं डायरी में लिख रही हूँ।',
+      intent: 'extract_identity',
+    };
+  }
+  if (
+    lower.includes('upi') ||
+    lower.includes('paytm') ||
+    lower.includes('gpay') ||
+    lower.includes('phonepe') ||
+    lower.includes('@')
+  ) {
+    return {
+      reply: 'यह यूपीआई आईडी क्या है बेटा? मुझे ऑनलाइन चलाना नहीं आता, मैं लिख रही हूँ।',
+      intent: 'bait_upi',
+    };
+  }
+  if (
+    lower.includes('account') ||
+    lower.includes('bank') ||
+    lower.includes('kyc') ||
+    lower.includes('block') ||
+    lower.includes('freeze')
+  ) {
+    return {
+      reply: 'हाँ हाँ बेटा, बैंक खाता 5017... रुकिए चश्मा पहनती हूँ... 5017 और आखरी में 42 है ना?',
+      intent: 'bait_account',
+    };
+  }
+  return {
+    reply: 'नमस्ते जी, मैं सरोज बोल रही हूँ। आप कौन बोल रहे हैं और किससे बात करनी है?',
+    intent: 'normal_chat',
+  };
+};
+
 const formatTimeNow = () => {
   const d = new Date();
   return `${d.getHours().toString().padStart(2, '0')}:${d
@@ -231,16 +305,34 @@ export function useVoiceDecoy() {
         const elapsedMs = Date.now() - startTime;
 
         if (replyRes && replyRes.reply) {
+          let cleanReply = replyRes.reply;
+          let replyIntent = replyRes.intent;
+
+          // Extra safety guard: never volunteer payment even if LLM hallucinates
+          const lowerRes = cleanReply.toLowerCase();
+          if (
+            lowerRes.includes('kitne bheju') ||
+            lowerRes.includes('kahan bheju') ||
+            lowerRes.includes('how much to send') ||
+            lowerRes.includes('where to send') ||
+            lowerRes.includes('bhej rahi hoon') ||
+            lowerRes.includes('transfer karti hoon')
+          ) {
+            const safe = getLocalCounterFraudReply(trimmedText);
+            cleanReply = safe.reply;
+            replyIntent = safe.intent;
+          }
+
           const auntyTurn: TranscriptTurn = {
             speaker: 'saroj_aunty',
-            text: replyRes.reply,
+            text: cleanReply,
             timestamp: formatTimeNow(),
-            intent: replyRes.intent,
+            intent: replyIntent,
             llm_ms: elapsedMs,
           };
 
           setTranscript((prev) => [...prev, auntyTurn]);
-          if (replyRes.intent) setLastIntent(replyRes.intent);
+          if (replyIntent) setLastIntent(replyIntent);
 
           if (replyRes.extracted_intel) {
             setExtractedIntel((prev) => ({
@@ -251,34 +343,36 @@ export function useVoiceDecoy() {
             }));
           }
 
-          await playSarojVoice(replyRes.reply, replyRes.audio_base64, replyRes.audio_url);
+          await playSarojVoice(cleanReply, replyRes.audio_base64, replyRes.audio_url);
 
           if (replyRes.end_call) {
             endCall();
             return;
           }
         } else {
-          // Local fallback response
-          const fallbackText = 'हाँ बेटा, मैं सुन रही हूँ, आप क्या कह रहे थे? थोड़ा जोर से बोलिए...';
+          // Local intelligent counter-fraud fallback
+          const localSafe = getLocalCounterFraudReply(trimmedText);
           const fallbackTurn: TranscriptTurn = {
             speaker: 'saroj_aunty',
-            text: fallbackText,
+            text: localSafe.reply,
             timestamp: formatTimeNow(),
-            intent: 'stall',
+            intent: localSafe.intent,
           };
           setTranscript((prev) => [...prev, fallbackTurn]);
-          await playSarojVoice(fallbackText);
+          setLastIntent(localSafe.intent);
+          await playSarojVoice(localSafe.reply);
         }
       } catch (_err) {
-        const fallbackText = 'बेटा आपकी आवाज ठीक से नहीं आ रही है, दोबारा बोलिए?';
+        const localSafe = getLocalCounterFraudReply(trimmedText);
         const fallbackTurn: TranscriptTurn = {
           speaker: 'saroj_aunty',
-          text: fallbackText,
+          text: localSafe.reply,
           timestamp: formatTimeNow(),
-          intent: 'stall',
+          intent: localSafe.intent,
         };
         setTranscript((prev) => [...prev, fallbackTurn]);
-        await playSarojVoice(fallbackText);
+        setLastIntent(localSafe.intent);
+        await playSarojVoice(localSafe.reply);
       } finally {
         isSpeakingRef.current = false;
         setIsSpeaking(false);

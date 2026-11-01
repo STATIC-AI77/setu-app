@@ -102,6 +102,7 @@ export function useSetuShield() {
     updateSettings,
     refreshLogs,
     refreshPermissions,
+    refreshInterlock,
     pingBackend,
   };
 }

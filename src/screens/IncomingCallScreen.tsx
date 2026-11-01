@@ -7,7 +7,6 @@ import {
   Animated,
   Vibration,
 } from 'react-native';
-import { Audio } from 'expo-av';
 import { THEME } from '../constants/theme';
 
 interface IncomingCallScreenProps {
@@ -29,7 +28,6 @@ export const IncomingCallScreen: React.FC<IncomingCallScreenProps> = ({
   onReject,
   autoAnswer = false,
 }) => {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [secondsRinging, setSecondsRinging] = useState(0);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -67,39 +65,12 @@ export const IncomingCallScreen: React.FC<IncomingCallScreenProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Play ringtone and vibrate
+  // Vibrate pattern
   useEffect(() => {
-    const playRingtone = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: false,
-        });
-
-        // TODO: Add actual ringtone audio file to assets/
-        // For now, rely on vibration only
-        // const { sound: newSound } = await Audio.Sound.createAsync(
-        //   require('../../assets/ringtone.mp3'),
-        //   { shouldPlay: true, isLooping: true, volume: 0.8 }
-        // );
-        // setSound(newSound);
-      } catch (error) {
-        console.warn('Could not set audio mode:', error);
-      }
-
-      // Vibration pattern: [wait, vibrate, wait, vibrate, ...]
-      Vibration.vibrate([0, 400, 200, 400, 200, 400], true);
-    };
-
-    playRingtone();
+    // Vibration pattern: [wait, vibrate, wait, vibrate, ...]
+    Vibration.vibrate([0, 400, 200, 400, 200, 400], true);
 
     return () => {
-      if (sound) {
-        sound.stopAsync();
-        sound.unloadAsync();
-      }
       Vibration.cancel();
     };
   }, []);
@@ -163,19 +134,11 @@ export const IncomingCallScreen: React.FC<IncomingCallScreenProps> = ({
   }, [rippleAnim1, rippleAnim2, rippleAnim3]);
 
   const handleAccept = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-    }
     Vibration.cancel();
     onAccept();
   };
 
   const handleReject = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-    }
     Vibration.cancel();
     onReject();
   };

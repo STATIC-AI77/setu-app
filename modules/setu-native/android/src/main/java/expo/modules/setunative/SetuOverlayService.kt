@@ -85,10 +85,76 @@ class SetuOverlayService : Service() {
     }
 
     private fun showOverlay(scamType: String, riskScore: Int) {
-        // Full screen blocking overlay disabled per user request.
-        // Warnings are delivered exclusively through system notification banners.
-        removeOverlay()
-        return
+        if (overlayView != null) return
+
+        val layoutParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+            PixelFormat.TRANSLUCENT
+        )
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#dc2626"))
+            gravity = Gravity.CENTER
+            setPadding(48, 48, 48, 48)
+        }
+
+        val icon = TextView(this).apply {
+            text = "🛑"
+            textSize = 72f
+            gravity = Gravity.CENTER
+        }
+
+        val title = TextView(this).apply {
+            text = "Setu Security Lockdown\nसेतु सुरक्षा लॉकडाउन"
+            textSize = 28f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, 24, 0, 16)
+        }
+
+        val subtitle = TextView(this).apply {
+            text = "Device locked down remotely by Guardian to safeguard your accounts.\n\nपरिवार द्वारा सुरक्षा के लिए फोन लॉकडाउन कर दिया गया है।"
+            textSize = 16f
+            setTextColor(Color.parseColor("#fef2f2"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 24)
+        }
+
+        val badge = TextView(this).apply {
+            text = "Status: $scamType (Risk: $riskScore%)"
+            textSize = 14f
+            setTextColor(Color.YELLOW)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 32)
+        }
+
+        val dismissBtn = Button(this).apply {
+            text = "Emergency Unlock (Guardian Code)"
+            setBackgroundColor(Color.parseColor("#1e293b"))
+            setTextColor(Color.WHITE)
+            setOnClickListener { release(this@SetuOverlayService) }
+        }
+
+        layout.addView(icon)
+        layout.addView(title)
+        layout.addView(subtitle)
+        layout.addView(badge)
+        layout.addView(dismissBtn)
+
+        overlayView = layout
+        try {
+            windowManager?.addView(overlayView, layoutParams)
+        } catch (_: Exception) {}
     }
 
     private fun removeOverlay() {

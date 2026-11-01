@@ -28,6 +28,7 @@ import { IncomingCallScreen } from './src/screens/IncomingCallScreen';
 // Modals
 import { SettingsModal } from './src/components/SettingsModal';
 import { EmergencyPanicModal } from './src/components/EmergencyPanicModal';
+import { LockdownOverlay } from './src/components/LockdownOverlay';
 
 export default function App() {
   // Supabase Google OAuth & User Session State
@@ -40,6 +41,7 @@ export default function App() {
     backendOnline,
     updateSettings,
     refreshLogs,
+    refreshInterlock,
     pingBackend,
   } = useSetuShield();
 
@@ -155,8 +157,12 @@ export default function App() {
         refreshStats();
       } else if (event.type === 'arm_interlock') {
         SetuNativeModule.armInterlock(event.reason || 'Scam Intercepted', event.risk_score || 95);
+        refreshInterlock();
+        refreshLogs();
       } else if (event.type === 'release_interlock') {
         SetuNativeModule.releaseInterlock();
+        refreshInterlock();
+        refreshLogs();
       } else if (event.type === 'scam_call_detected' || event.type === 'incoming_scam_call' || event.event_type === 'incoming_scam_call') {
         // Show incoming call screen immediately
         const callData = {
@@ -571,6 +577,13 @@ export default function App() {
         onSimulateScam={handleSimulateScam}
         onSimulateCallThreat={handleSimulateCallThreat}
         onToggleInterlockDirect={handleToggleInterlockDirect}
+      />
+
+      {/* FULL SCREEN EMERGENCY LOCKDOWN OVERLAY */}
+      <LockdownOverlay
+        visible={interlockStatus === 'armed'}
+        reason={activeThreat?.scam_type || 'Emergency Lockdown Triggered by Family Guardian'}
+        onEmergencyUnlock={handleEmergencyRelease}
       />
 
       {/* INCOMING SCAM CALL SCREEN (FULL-SCREEN OVERLAY) */}

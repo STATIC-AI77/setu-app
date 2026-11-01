@@ -173,13 +173,29 @@ class ScamAlertListenerService {
             try {
               const jsonStr = dataLine.replace(/^data:\s*/, '').trim();
               const payload = JSON.parse(jsonStr);
-              // Handle both scam_call_detected and incoming_scam_call events
+              
+              // Handle incoming_scam_call events - ALWAYS trigger callbacks
               if (
                 payload &&
+                (payload.event === 'incoming_scam_call' || 
+                 payload.type === 'incoming_scam_call' ||
+                 payload.event_type === 'incoming_scam_call')
+              ) {
+                console.log('[SSE] Incoming scam call detected:', payload.call_id);
+                // Trigger callbacks immediately for incoming calls
+                this.onAlertCallbacks.forEach((cb) => {
+                  try {
+                    cb(payload);
+                  } catch (e) {
+                    console.error('[SSE] Callback error:', e);
+                  }
+                });
+              }
+              // Handle regular scam_call_detected events
+              else if (
+                payload &&
                 (payload.event === 'scam_call_detected' || 
-                 payload.type === 'scam_call_detected' ||
-                 payload.event === 'incoming_scam_call' ||
-                 payload.event_type === 'incoming_scam_call') &&
+                 payload.type === 'scam_call_detected') &&
                 payload.alert_id &&
                 !this.processedAlertIds.has(payload.alert_id)
               ) {
