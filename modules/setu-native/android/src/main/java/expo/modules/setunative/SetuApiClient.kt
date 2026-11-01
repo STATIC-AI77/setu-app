@@ -1,6 +1,7 @@
 package expo.modules.setunative
 
 import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -48,54 +49,86 @@ object SetuApiClient {
     }
 
     fun detect(context: Context, channel: String, content: String, sender: String): DetectResponse? {
-        val baseUrl = SetuConfig.getBaseUrl(context).trimEnd('/')
+        val primaryUrl = SetuConfig.getBaseUrl(context).trimEnd('/')
+        val fallbackUrl = "http://127.0.0.1:8000"
+        val candidates = if (primaryUrl.contains("127.0.0.1")) listOf(primaryUrl) else listOf(primaryUrl, fallbackUrl)
         val token = SetuConfig.getToken(context)
         val deviceId = SetuConfig.getDeviceId(context)
-        return try {
-            val conn = openConnection("$baseUrl/detect", "POST", token, 12000)
-            conn.doOutput = true
-            val body = JSONObject().apply {
-                put("channel", channel)
-                put("content", content)
-                put("sender", sender)
-                put("media_url", JSONObject.NULL)
-                put("device_id", deviceId)
-                put("ts", getIsoTs())
+
+        for (baseUrl in candidates) {
+            try {
+                Log.i("SetuApiClient", "POST $baseUrl/detect for sender: $sender ($channel)")
+                val conn = openConnection("$baseUrl/detect", "POST", token, 12000)
+                conn.doOutput = true
+                val body = JSONObject().apply {
+                    put("channel", channel)
+                    put("content", content)
+                    put("sender", sender)
+                    put("media_url", JSONObject.NULL)
+                    put("device_id", deviceId)
+                    put("ts", getIsoTs())
+                }
+                OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+                val code = conn.responseCode
+                Log.i("SetuApiClient", "Response from $baseUrl/detect: $code")
+                if (code in 200..299) {
+                    val resp = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(resp)
+                    return DetectResponse(
+                        isScam = json.optBoolean("is_scam", false),
+                        scamType = json.optString("scam_type", "scam"),
+                        riskScore = json.optInt("risk_score", 0),
+                        action = json.optString("action", "ignore"),
+                        raw = resp
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w("SetuApiClient", "Failed calling $baseUrl/detect: ${e.message}")
             }
-            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
-            if (conn.responseCode in 200..299) {
-                val resp = conn.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(resp)
-                DetectResponse(
-                    isScam = json.optBoolean("is_scam", false),
-                    scamType = json.optString("scam_type", "scam"),
-                    riskScore = json.optInt("risk_score", 0),
-                    action = json.optString("action", "ignore"),
-                    raw = resp
-                )
-            } else null
-        } catch (_: Exception) { null }
+        }
+        return null
     }
 
-    fun getDecoyReply(context: Context, sender: String, latestMsg: String, scamType: String): String? {
-        val baseUrl = SetuConfig.getBaseUrl(context).trimEnd('/')
+    fun getDecoyReply(
+        context: Context,
+        sender: String,
+        latestMsg: String,
+        scamType: String,
+        conversationId: String? = null,
+        history: JSONArray? = null
+    ): String? {
+        val primaryUrl = SetuConfig.getBaseUrl(context).trimEnd('/')
+        val fallbackUrl = "http://127.0.0.1:8000"
+        val candidates = if (primaryUrl.contains("127.0.0.1")) listOf(primaryUrl) else listOf(primaryUrl, fallbackUrl)
         val token = SetuConfig.getToken(context)
-        return try {
-            val conn = openConnection("$baseUrl/chat/decoy-reply", "POST", token, 8000)
-            conn.doOutput = true
-            val body = JSONObject().apply {
-                put("conversation_id", JSONObject.NULL)
-                put("scammer_number", sender)
-                put("history", JSONArray())
-                put("latest_message", latestMsg)
-                put("scam_type", scamType)
+        val convId = conversationId ?: "wa_${sender.replace(Regex("[^0-9a-zA-Z]"), "")}"
+
+        for (baseUrl in candidates) {
+            try {
+                Log.i("SetuApiClient", "POST $baseUrl/chat/decoy-reply for $sender")
+                val conn = openConnection("$baseUrl/chat/decoy-reply", "POST", token, 10000)
+                conn.doOutput = true
+                val body = JSONObject().apply {
+                    put("conversation_id", convId)
+                    put("scammer_number", sender)
+                    put("history", history ?: JSONArray())
+                    put("latest_message", latestMsg)
+                    put("scam_type", scamType)
+                    put("generate_audio", false)
+                }
+                OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+                val code = conn.responseCode
+                Log.i("SetuApiClient", "Response from $baseUrl/chat/decoy-reply: $code")
+                if (code in 200..299) {
+                    val resp = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(resp)
+                    return if (json.has("reply") && !json.isNull("reply")) json.getString("reply") else null
+                }
+            } catch (e: Exception) {
+                Log.w("SetuApiClient", "Failed calling $baseUrl/chat/decoy-reply: ${e.message}")
             }
-            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
-            if (conn.responseCode in 200..299) {
-                val resp = conn.inputStream.bufferedReader().use { it.readText() }
-                JSONObject(resp).optString("reply", null)
-            } else null
-        } catch (_: Exception) { null }
+        }
+        return null
     }
 
     fun checkThreatIntel(context: Context, rawPhone: String): ThreatIntelResponse {

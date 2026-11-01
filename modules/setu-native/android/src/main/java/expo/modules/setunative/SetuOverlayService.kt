@@ -85,76 +85,10 @@ class SetuOverlayService : Service() {
     }
 
     private fun showOverlay(scamType: String, riskScore: Int) {
-        if (overlayView != null) return
-
-        val layoutParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
-            PixelFormat.TRANSLUCENT
-        )
-
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#dc2626"))
-            gravity = Gravity.CENTER
-            setPadding(48, 48, 48, 48)
-        }
-
-        val icon = TextView(this).apply {
-            text = "🛑"
-            textSize = 72f
-            gravity = Gravity.CENTER
-        }
-
-        val title = TextView(this).apply {
-            text = "Setu Security Alert\nसेतु सुरक्षा चेतावनी"
-            textSize = 28f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, 24, 0, 16)
-        }
-
-        val subtitle = TextView(this).apply {
-            text = "Financial apps are temporarily locked to protect your savings. Contact your family guardian to unlock.\n\nधोखाधड़ी का खतरा — सुरक्षा के लिए भुगतान ऐप बंद हैं। अनलॉक करने के लिए परिवार से संपर्क करें।"
-            textSize = 15f
-            setTextColor(Color.parseColor("#fef2f2"))
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
-        }
-
-        val badge = TextView(this).apply {
-            text = "Detected Threat: $scamType (Risk: $riskScore%)"
-            textSize = 14f
-            setTextColor(Color.YELLOW)
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 32)
-        }
-
-        val dismissBtn = Button(this).apply {
-            text = "Emergency Unlock (Demo)"
-            setBackgroundColor(Color.parseColor("#1e293b"))
-            setTextColor(Color.WHITE)
-            setOnClickListener { release(this@SetuOverlayService) }
-        }
-
-        layout.addView(icon)
-        layout.addView(title)
-        layout.addView(subtitle)
-        layout.addView(badge)
-        layout.addView(dismissBtn)
-
-        overlayView = layout
-        try {
-            windowManager?.addView(overlayView, layoutParams)
-        } catch (_: Exception) {}
+        // Full screen blocking overlay disabled per user request.
+        // Warnings are delivered exclusively through system notification banners.
+        removeOverlay()
+        return
     }
 
     private fun removeOverlay() {
