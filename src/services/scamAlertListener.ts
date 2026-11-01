@@ -173,9 +173,13 @@ class ScamAlertListenerService {
             try {
               const jsonStr = dataLine.replace(/^data:\s*/, '').trim();
               const payload = JSON.parse(jsonStr);
+              // Handle both scam_call_detected and incoming_scam_call events
               if (
                 payload &&
-                (payload.event === 'scam_call_detected' || payload.type === 'scam_call_detected') &&
+                (payload.event === 'scam_call_detected' || 
+                 payload.type === 'scam_call_detected' ||
+                 payload.event === 'incoming_scam_call' ||
+                 payload.event_type === 'incoming_scam_call') &&
                 payload.alert_id &&
                 !this.processedAlertIds.has(payload.alert_id)
               ) {

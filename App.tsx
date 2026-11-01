@@ -157,14 +157,24 @@ export default function App() {
         SetuNativeModule.armInterlock(event.reason || 'Scam Intercepted', event.risk_score || 95);
       } else if (event.type === 'release_interlock') {
         SetuNativeModule.releaseInterlock();
-      } else if (event.type === 'scam_call_detected') {
+      } else if (event.type === 'scam_call_detected' || event.type === 'incoming_scam_call' || event.event_type === 'incoming_scam_call') {
+        // Show incoming call screen immediately
+        const callData = {
+          callId: event.call_id || event.alert_id || `call_${Date.now()}`,
+          scammerNumber: event.caller_number || event.scammer_number || '+91 Scammer',
+          scamScenario: event.scam_scenario || event.scam_type || 'digital_arrest',
+        };
+        setIncomingCallData(callData);
+        setShowIncomingCall(true);
+        
+        // Also trigger notification
         scamAlertListener.triggerRedWarningNotification(event);
         setActiveThreat({
-          alert_id: event.alert_id || currentVerdictId,
-          verdict_id: event.alert_id || currentVerdictId,
+          alert_id: event.alert_id || callData.callId,
+          verdict_id: event.alert_id || callData.callId,
           scam_type: event.scam_type || 'Scam Call Detected',
           risk_score: event.risk_score ? (event.risk_score <= 1.0 ? Math.round(event.risk_score * 100) : Math.round(event.risk_score)) : 95,
-          scammer_number: event.caller_number || event.scammer_number || '+91 Scam Caller',
+          scammer_number: callData.scammerNumber,
           channel: 'call',
           evidence: [
             event.message || 'Scam call detected by Setu AI Guard',
@@ -210,6 +220,17 @@ export default function App() {
   useEffect(() => {
     if (settings?.baseUrl && settings?.protectionEnabled !== false) {
       scamAlertListener.startListening(settings.baseUrl, (alert) => {
+        // If this is an incoming call event, show the incoming call screen
+        if (alert.event === 'incoming_scam_call' || (alert as any).event_type === 'incoming_scam_call' || (alert as any).should_ring) {
+          const callData = {
+            callId: (alert as any).call_id || alert.alert_id || `call_${Date.now()}`,
+            scammerNumber: alert.caller_number || '+91 Scammer',
+            scamScenario: (alert as any).scam_scenario || alert.scam_type || 'digital_arrest',
+          };
+          setIncomingCallData(callData);
+          setShowIncomingCall(true);
+        }
+        
         setActiveThreat({
           alert_id: alert.alert_id,
           verdict_id: alert.alert_id,
